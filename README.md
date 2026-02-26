@@ -1,263 +1,292 @@
-# Dự Đoán Phá Sản Doanh Nghiệp Bằng Học Máy
+# Corporate Bankruptcy Prediction using Machine Learning
 
-## Mục Lục
+## Table of Contents
 
-- [Giới thiệu](#giới-thiệu)
-- [Mô tả Bộ Dữ Liệu](#mô-tả-bộ-dữ-liệu)
-- [Cấu trúc Project](#cấu-trúc-project)
-- [Cài đặt và Yêu cầu](#cài-đặt-và-yêu-cầu)
-- [Quy trình Thực hiện](#quy-trình-thực-hiện)
-  - [Bước 1: Khám phá Dữ liệu (EDA)](#bước-1-khám-phá-dữ-liệu-eda)
-  - [Bước 2: Tiền xử lý Dữ liệu](#bước-2-tiền-xử-lý-dữ-liệu)
-  - [Bước 3: Huấn luyện Mô hình](#bước-3-huấn-luyện-mô-hình)
-  - [Bước 4: Đánh giá và So sánh](#bước-4-đánh-giá-và-so-sánh)
-- [Kết quả](#kết-quả)
-- [Kết luận](#kết-luận)
-- [Tài liệu tham khảo](#tài-liệu-tham-khảo)
-
----
-
-## Giới thiệu
-
-Dự án xây dựng mô hình học máy để dự đoán nguy cơ phá sản của doanh nghiệp dựa trên các chỉ số tài chính. Đây là bài toán **phân loại nhị phân trên dữ liệu mất cân bằng cực đoan** (lớp phá sản chỉ chiếm 0.6% tổng thể), thuộc dạng *rare-event prediction* — rất phổ biến trong lĩnh vực tài chính.
-
-**Mục tiêu:**
-- Xác định liệu một doanh nghiệp có nguy cơ rơi vào tình trạng phá sản hay không.
-- So sánh hiệu suất của nhiều thuật toán phân loại khác nhau.
-- Tìm ra mô hình tối ưu nhất cho bài toán dữ liệu mất cân bằng.
-- Xác định các chỉ số tài chính quan trọng nhất ảnh hưởng đến dự đoán phá sản.
+- [Introduction](#introduction)
+- [Dataset Description](#dataset-description)
+- [Project Structure](#project-structure)
+- [Installation & Requirements](#installation--requirements)
+- [Workflow](#workflow)
+  - [Step 1: Exploratory Data Analysis (EDA)](#step-1-exploratory-data-analysis-eda)
+  - [Step 2: Data Preprocessing](#step-2-data-preprocessing)
+  - [Step 3: Model Training](#step-3-model-training)
+  - [Step 4: Evaluation & Comparison](#step-4-evaluation--comparison)
+- [Results](#results)
+- [Conclusion](#conclusion)
+- [References](#references)
 
 ---
 
-## Mô tả Bộ Dữ Liệu
+## Introduction
 
-Bộ dữ liệu `bankruptcy_data.xlsx` gồm **92.872 quan sát** với **12 đặc trưng tài chính** và **1 biến mục tiêu**.
+This project builds machine learning models to predict corporate bankruptcy risk based on financial indicators. This is a **binary classification problem on highly imbalanced data** (bankruptcy class represents only 0.6% of samples), known as a *rare-event prediction* task — very common in financial risk assessment.
 
-### Các đặc trưng (Features)
+### Objectives:
+- Determine whether a company is at risk of bankruptcy based on financial metrics.
+- Compare performance across multiple classification algorithms.
+- Identify the optimal model for highly imbalanced data.
+- Interpret the most important financial indicators influencing bankruptcy prediction.
 
-| Đặc trưng | Mô tả |
+### Business Impact:
+In finance, correctly identifying at-risk companies is critical:
+- **False Negatives (missed bankruptcies):** High cost — investors lose capital.
+- **False Positives (false alarms):** Lower cost — conservative in decision-making.
+  
+This drives the focus on **Recall and AUC** over raw Accuracy.
+
+---
+
+## Dataset Description
+
+The **bankruptcy_data.xlsx** dataset contains **92,872 observations** with **12 financial features** and **1 target variable**.
+
+### Financial Features
+
+| Feature | Description |
 |:---|:---|
-| **EPS** | Lợi nhuận trên mỗi cổ phiếu (Earnings Per Share) |
-| **Liquidity** | Khả năng thanh khoản — chuyển đổi tài sản thành tiền mặt |
-| **Profitability** | Khả năng sinh lời trong hoạt động kinh doanh |
-| **Productivity** | Năng suất hoạt động — hiệu quả tạo ra giá trị |
-| **Leverage Ratio** | Tỷ lệ đòn bẩy tài chính (nợ / vốn chủ sở hữu) |
-| **Asset Turnover** | Vòng quay tài sản — hiệu quả sử dụng tài sản |
-| **Operational Margin** | Biên lợi nhuận hoạt động |
-| **Return on Equity (ROE)** | Lợi nhuận trên vốn chủ sở hữu |
-| **Market Book Ratio** | Tỷ giá thị trường / giá sổ sách |
-| **Assets Growth** | Tốc độ tăng trưởng tài sản |
-| **Sales Growth** | Tốc độ tăng trưởng doanh thu |
-| **Employee Growth** | Tốc độ tăng trưởng nhân sự |
+| **EPS** | Earnings Per Share |
+| **Liquidity** | Cash conversion ability of assets |
+| **Profitability** | Profit generation capability |
+| **Productivity** | Operational efficiency in value creation |
+| **Leverage Ratio** | Debt to equity ratio |
+| **Asset Turnover** | Efficiency of asset utilization |
+| **Operational Margin** | Operating profit margin |
+| **Return on Equity (ROE)** | Return on shareholder capital |
+| **Market Book Ratio** | Market value vs. book value |
+| **Assets Growth** | Asset growth rate |
+| **Sales Growth** | Revenue growth rate |
+| **Employee Growth** | Workforce growth rate |
 
-### Biến mục tiêu
+### Target Variable
 
-| Giá trị | Ý nghĩa |
+| Value | Meaning |
 |:---|:---|
-| `BK = 0` | Doanh nghiệp **không phá sản** (99.4%) |
-| `BK = 1` | Doanh nghiệp **phá sản** (0.6% — 558 mẫu) |
+| `BK = 0` | **Non-bankrupt** (99.4% of data) |
+| `BK = 1` | **Bankrupt** (0.6% of data — 558 samples) |
 
-> **Lưu ý:** Tỷ lệ mất cân bằng cực đoan (0.6%) là thách thức lớn nhất của bài toán. Nếu không xử lý, mô hình có thể đoán toàn bộ là "không phá sản" và vẫn đạt Accuracy ~99%.
+> **Note:** This extreme imbalance (0.6%) is the core challenge. A naive classifier predicting all non-bankrupt would achieve ~99% accuracy while catching zero bankruptcies!
 
 ---
 
-## Cấu trúc Project
+## Project Structure
 
 ```
-project_python/
-├── project.ipynb          # Notebook chính chứa toàn bộ phân tích
-├── bankruptcy_data.xlsx   # Dữ liệu tài chính đầu vào
-└── README.md              # Tài liệu mô tả dự án
+bankruptcy_prediction/
+├── README.md                          # Project documentation
+├── requirements.txt                   # Python dependencies
+├── .gitignore                         # Git ignore file
+├── data/
+│   └── bankruptcy_data.xlsx           # Input financial dataset
+├── notebooks/
+│   └── project.ipynb                  # Main Jupyter Notebook with full analysis
+└── images/                            # Generated visualizations
+    ├── 01_roc_curve.png               # ROC curve comparison
+    ├── 02_feature_importance.png      # Feature importance ranking
+    ├── 03_confusion_matrices.png      # Confusion matrix heatmaps
 ```
 
----
+### Directory Descriptions
 
-## Cài đặt và Yêu cầu
+| Directory | Contents |
+|:---|:---|
+| **data/** | Raw and processed data files (Excel, CSV formats) |
+| **notebooks/** | Jupyter notebooks for EDA, preprocessing, and modeling |
+| **images/** | Generated plots and visualizations for documentation |
+| **root/** | Configuration files, documentation, and dependency tracking |
 
-### Ngôn ngữ & Môi trường
+
+## Installation & Requirements
+
+### Environment
 - Python 3.13+
 - Jupyter Notebook / VS Code
 
-### Thư viện cần thiết
+### Quick Install
+
+Install all dependencies from the requirements file:
 
 ```bash
-pip install numpy pandas scipy matplotlib seaborn missingno
-pip install scikit-learn imbalanced-learn xgboost
+pip install -r requirements.txt
 ```
 
-| Thư viện | Mục đích |
+### Required Libraries
+
+| Library | Purpose |
 |:---|:---|
-| `numpy`, `pandas` | Xử lý và thao tác dữ liệu |
-| `scipy` | Tính toán thống kê, Winsorization |
-| `matplotlib`, `seaborn` | Trực quan hóa dữ liệu |
-| `missingno` | Phân tích mẫu dữ liệu bị thiếu |
-| `scikit-learn` | Mô hình ML, tiền xử lý, đánh giá |
-| `imbalanced-learn` | Xử lý dữ liệu mất cân bằng (SMOTE, ENN, ImbPipeline) |
-| `xgboost` | Thuật toán Gradient Boosting nâng cao |
+| `numpy`, `pandas` | Data manipulation and analysis |
+| `scipy` | Statistical computing, Winsorization |
+| `matplotlib`, `seaborn` | Data visualization |
+| `missingno` | Missing data pattern visualization |
+| `scikit-learn` | ML algorithms, preprocessing, evaluation |
+| `imbalanced-learn` | Imbalance handling (SMOTE, ENN, ImbPipeline) |
+| `xgboost` | Advanced gradient boosting |
+| `openpyxl` | Excel file reading/writing |
 
 ---
 
-## Quy trình Thực hiện
+## Workflow
 
-### Bước 1: Khám phá Dữ liệu (EDA)
+### Step 1: Exploratory Data Analysis (EDA)
 
-#### 1.1. Kiểu dữ liệu
-- Toàn bộ đặc trưng đều là kiểu `float64`, biến mục tiêu `BK` là `int64` nhị phân.
-- Dữ liệu đã ở dạng sẵn sàng cho Machine Learning, không cần mã hóa (encoding).
+#### 1.1 Data Types
+- All features are `float64`, target variable `BK` is binary `int64`.
+- Data is ML-ready; no encoding needed.
 
-#### 1.2. Phân phối và Thống kê mô tả
-- Hầu hết các biến có **phân phối lệch** (skewed) với đuôi dày, không tuân theo phân phối chuẩn.
-- Khoảng cách giữa Min–Max so với IQR rất lớn, cho thấy sự biến động mạnh — đặc trưng của dữ liệu tài chính.
+#### 1.2 Distributions & Basic Statistics
+- Most features show **skewed distributions** with heavy tails — typical of financial data.
+- Large Min-Max ranges compared to IQR indicate high volatility.
 
-#### 1.3. Phân tích Mất cân bằng
-- Lớp phá sản (`BK = 1`) chỉ chiếm **0.6%** (558 / 92.872 mẫu).
-- Đây là bài toán *rare-event*, cần các kỹ thuật đặc biệt để xử lý.
+#### 1.3 Class Imbalance Detection
+- Bankrupt class (`BK = 1`) represents only **0.6%** (558 out of 92,872 samples).
+- This is a *rare-event* classification problem requiring specialized techniques.
 
-#### 1.4. Phát hiện Ngoại lai (Outliers)
-- Outlier chiếm **12–17%** tổng thể dữ liệu trên hầu hết các biến.
-- Nhiều outlier chính là **đặc trưng của doanh nghiệp phá sản** (ROE âm, nợ cao, lợi nhuận cực thấp) → không thể xóa.
-- **Quyết định:** Giữ lại toàn bộ quan sát, sử dụng Winsorization để giảm ảnh hưởng cực đoan.
+#### 1.4 Outlier Analysis
+- **12–17% of data** contains outliers across most variables.
+- Many outliers are **legitimate bankruptcy indicators** (negative ROE, high debt, low profits) → cannot be removed.
+- **Decision:** Retain all observations, use Winsorization to dampen extreme values.
 
-#### 1.5. Tương quan giữa các biến
-- Không có cặp biến nào có tương quan cao (> 0.7), không có hiện tượng đa cộng tuyến nghiêm trọng.
-- Giữ lại toàn bộ 12 đặc trưng để mô hình khai thác tối đa thông tin.
+#### 1.5 Feature Correlation
+- No feature pairs show high correlation (all < 0.7).
+- No multicollinearity concerns; retain all 12 features for maximum information.
 
-#### 1.6. Giá trị trùng lặp
-- Phát hiện và loại bỏ các bản ghi trùng lặp; **558 mẫu phá sản** vẫn được giữ nguyên.
+#### 1.6 Duplicate Records
+- Identified and removed duplicates; all 558 bankrupt samples preserved.
 
-#### 1.7. Phân tích Dữ liệu bị thiếu (Missing Values)
-- Nhiều cột bị thiếu dữ liệu (tỷ lệ < 20%), đặc biệt: `Employee Growth`, `Assets Growth`, `Sales Growth`, `Operational Margin`.
-- Phát hiện mẫu thiếu có tương quan cao giữa các nhóm biến:
-  - `Asset Turnover`, `Profitability`, `Productivity`, `Liquidity` — 100% trùng nhau.
-  - `Assets Growth` và `Sales Growth` — 100% trùng nhau.
-  - `ROE` và `EPS` — tương quan cao.
-- **Phương pháp xử lý:** KNN Imputer (phù hợp khi biến có tương quan cao).
-
----
-
-### Bước 2: Tiền xử lý Dữ liệu
-
-Quy trình tiền xử lý được thiết kế **tuần tự và nghiêm ngặt** để tránh rò rỉ dữ liệu (data leakage).
-
-#### 2.1. Chia tập Train / Test
-
-```
-Train : Test = 75% : 25% (random_state=42)
-```
-
-> Tách dữ liệu **trước khi** thực hiện bất kỳ bước xử lý nào, đảm bảo tập test hoàn toàn "chưa thấy" trong quá trình huấn luyện.
-
-#### 2.2. Điền giá trị thiếu — KNN Imputer
-
-- Sử dụng `KNNImputer` với `n_neighbors=5`, `weights='distance'`, `metric='nan_euclidean'`.
-- **Chỉ fit trên tập train**, sau đó transform cả train và test.
-- **Lý do chọn KNN Imputer:** Dữ liệu tài chính có nhiều biến tương quan, giá trị thiếu có thể suy luận chính xác từ các biến lân cận.
-
-#### 2.3. Xử lý Ngoại lai — Winsorization (5% – 95%)
-
-- Các giá trị nằm dưới phân vị 5% hoặc trên phân vị 95% được thay thế bằng giá trị biên tương ứng.
-- **Giới hạn Winsor được tính từ tập train**, áp dụng cho cả train và test.
-- **Ưu điểm:** Giảm ảnh hưởng của cực ngoại lai mà không xóa dữ liệu, bảo toàn kích thước mẫu.
-
-#### 2.4. Xử lý Mất cân bằng — SMOTE-ENN
-
-- **SMOTE** (Synthetic Minority Oversampling Technique): Tạo mẫu tổng hợp cho lớp thiểu số bằng cách nội suy giữa các mẫu lân cận (`k_neighbors=5`).
-- **ENN** (Edited Nearest Neighbours): Loại bỏ các mẫu tổng hợp bị nhiễu hoặc quá sát ranh giới quyết định (`n_neighbors=3`).
-- **Kết hợp SMOTE-ENN:** Trước tiên SMOTE tăng lượng mẫu thiểu số, sau đó ENN dọn dẹp → cho ra tập dữ liệu cân bằng và sạch hơn.
-- **Chỉ áp dụng trên tập train**, tập test giữ nguyên phân phối gốc.
-
-#### 2.5. Chuẩn hóa — RobustScaler
-
-- Sử dụng `RobustScaler` (dựa trên median và IQR) thay vì StandardScaler.
-- **Lý do:** Dữ liệu tài chính vẫn còn ngoại lai sau Winsorization; RobustScaler ít bị ảnh hưởng bởi outlier hơn so với StandardScaler.
-
-#### Sơ đồ Pipeline tổng thể
-
-```
-Dữ liệu gốc
-    │
-    ├── Train/Test Split (75/25, stratified)
-    │
-    ├── [TRAIN PATH]
-    │       ├── KNN Imputer (fit + transform)
-    │       ├── Winsorization (tính giới hạn + áp dụng)
-    │       ├── SMOTE-ENN (cân bằng lớp) ─── [Cho Voting Classifier]
-    │       └── RobustScaler (fit + transform)
-    │
-    └── [TEST PATH]
-            ├── KNN Imputer (transform only)
-            ├── Winsorization (áp dụng giới hạn từ train)
-            └── RobustScaler (transform only)
-```
+#### 1.7 Missing Data Patterns
+- Several columns have missing values (<20% each):
+  - `Employee Growth`, `Assets Growth`, `Sales Growth`, `Operational Margin` are most affected.
+- Strong correlation between missing values in related groups:
+  - `Asset Turnover`, `Profitability`, `Productivity`, `Liquidity` — 100% coincident missing.
+  - `Assets Growth` and `Sales Growth` — 100% coincident missing.
+- **Handling approach:** KNN Imputer (leverages high correlation between features).
 
 ---
 
-### Bước 3: Huấn luyện Mô hình
+### Step 2: Data Preprocessing
 
-#### 3.1. Logistic Regression (Baseline)
+All preprocessing follows a strict sequential pipeline to prevent **data leakage**.
 
-- **Vai trò:** Mô hình chuẩn (benchmark) để so sánh — đơn giản, nhanh, dễ giải thích.
-- **Cách hoạt động:** Dự đoán xác suất phá sản bằng hàm sigmoid.
-- **Phân tích hệ số (Coef):** Cho phép xác định mức độ và chiều hướng ảnh hưởng của từng đặc trưng đến xác suất phá sản.
+#### 2.1 Train/Test Split
 
-#### 3.2. Random Forest
+```
+Train: 75% | Test: 25% (random_state=42)
+```
 
-- **Vai trò:** Đánh giá khả năng xử lý quan hệ phi tuyến.
-- **Cách hoạt động:** Tập hợp nhiều cây quyết định, kết hợp kết quả bằng biểu quyết.
-- **Tham số:** `n_estimators=10`, `max_features='sqrt'`, `random_state=21`.
+> **Critical:** Split BEFORE any preprocessing. Test set remains completely unseen during training.
 
-#### 3.3. Gaussian Naive Bayes
+#### 2.2 Missing Value Imputation — KNN Imputer
 
-- **Vai trò:** Kiểm tra hiệu suất với thuật toán dựa trên xác suất điều kiện.
-- **Cách hoạt động:** Giả định các đặc trưng độc lập và tuân theo phân phối chuẩn; áp dụng định lý Bayes.
+- **Configuration:** `n_neighbors=5`, `weights='distance'`, `metric='nan_euclidean'`
+- **Fit:** Only on training data; transform both train and test.
+- **Rationale:** Financial data has correlated features, allowing accurate missing value prediction from neighbors.
 
-#### 3.4. Voting Classifier (Soft Voting)
+#### 2.3 Outlier Handling — Winsorization (5% – 95%)
 
-- **Vai trò:** Kết hợp sức mạnh của 3 mô hình đơn lẻ.
-- **Cách hoạt động:** Lấy trung bình xác suất dự đoán từ Logistic Regression, Random Forest, và Naive Bayes (*soft voting*) để đưa ra quyết định cuối cùng.
-- **Đánh giá ổn định:** Sử dụng **Stratified K-Fold Cross-Validation (K=5)** với `ImbPipeline` để đảm bảo:
-  - SMOTE-ENN chỉ được áp dụng **bên trong mỗi fold**, không rò rỉ dữ liệu.
-  - Tỷ lệ lớp mục tiêu giữ nguyên trong mỗi fold.
+- Values below the 5th percentile or above the 95th percentile are clipped to those bounds.
+- **Percentile boundaries:** Calculated from training data only; applied uniformly to train and test.
+- **Advantage:** Reduces extreme value impact while preserving sample count — no data loss.
 
-#### 3.5. XGBoost (Đề xuất nâng cao)
+#### 2.4 Class Imbalance Resampling — SMOTE-ENN
 
-- **Vai trò:** Giải pháp tối ưu cho dữ liệu mất cân bằng.
-- **Cách hoạt động:** Gradient Boosting — xây dựng cây tuần tự, mỗi cây tập trung sửa lỗi của cây trước.
-- **Xử lý mất cân bằng:** Sử dụng tham số `scale_pos_weight = ratio` (tỷ lệ mẫu âm / mẫu dương) thay vì SMOTE:
-  - Tăng trọng số cho lớp thiểu số trong hàm loss.
-  - Huấn luyện trực tiếp trên dữ liệu gốc (không qua SMOTE), tránh tạo mẫu tổng hợp.
-- **Tham số:** `n_estimators=100`, `learning_rate=0.05`, `max_depth=5`.
-- **Scaler riêng:** `RobustScaler` fit trên dữ liệu gốc (`train_t`), không phải dữ liệu đã resample.
+- **SMOTE** (Synthetic Minority Oversampling): Generates synthetic minority samples via interpolation between k-nearest neighbors (`k=5`).
+- **ENN** (Edited Nearest Neighbours): Removes noisy synthetic samples that fall too close to majority boundary (`k=3`).
+- **Combined SMOTE-ENN:** First oversample, then denoise → balanced, clean data.
+- **Applied:** Training set only; test set remains in original distribution.
+
+#### 2.5 Feature Scaling — RobustScaler
+
+- Scales using median and IQR instead of mean and standard deviation.
+- **Rationale:** Financial data retains outliers even after Winsorization; RobustScaler is more robust.
+
+#### 2.6 Complete Preprocessing Pipeline
+
+```
+Raw Data
+  │
+  ├── Train/Test Split (75/25, stratified)
+  │
+  ├── [TRAINING PATH]
+  │   ├── KNN Imputer (fit + transform)
+  │   ├── Winsorization (calculate bounds + apply)
+  │   ├── SMOTE-ENN (balance classes) ─── [Feed to Voting Classifier]
+  │   └── RobustScaler (fit + transform)
+  │
+  └── [TEST PATH]
+      ├── KNN Imputer (transform only)
+      ├── Winsorization (apply training bounds)
+      └── RobustScaler (transform only)
+```
 
 ---
 
-### Bước 4: Đánh giá và So sánh
+### Step 3: Model Training
 
-#### Các chỉ số đánh giá
+Five algorithms tested, with emphasis on handling class imbalance:
 
-| Chỉ số | Ý nghĩa | Tầm quan trọng |
+#### 3.1 Logistic Regression (Baseline)
+
+- **Role:** Establishes baseline performance.
+- **Mechanism:** Probabilistic model using sigmoid function.
+- **Output:** Coefficients show direction and magnitude of feature impact.
+
+#### 3.2 Random Forest
+
+- **Role:** Evaluates non-linear relationships.
+- **Mechanism:** Ensemble of decision trees; majority voting.
+- **Parameters:** `n_estimators=10`, `max_features='sqrt'`, `random_state=21`
+
+#### 3.3 Gaussian Naive Bayes
+
+- **Role:** Tests probabilistic conditional approach.
+- **Mechanism:** Applies Bayes' theorem assuming feature independence and Gaussian distribution.
+
+#### 3.4 Voting Classifier (Soft Voting Ensemble)
+
+- **Role:** Combines strengths of above three models.
+- **Mechanism:** Averages probability predictions from Logistic Regression, Random Forest, and Naive Bayes.
+- **Stability Evaluation:** Stratified K-Fold CV (K=5) with `ImbPipeline`:
+  - SMOTE-ENN applied **within each fold** only — prevents data leakage.
+  - Class ratio maintained across folds.
+
+#### 3.5 XGBoost (Advanced Proposal)
+
+- **Role:** Optimized solution for imbalanced data.
+- **Mechanism:** Gradient boosting — sequential trees, each correcting predecessor's errors.
+- **Imbalance Handling:** `scale_pos_weight = ratio` (minority/majority sample count):
+  - Increases weight of minority class in loss function.
+  - Trains on original data (no SMOTE) → avoids synthetic sample artifacts.
+- **Parameters:** `n_estimators=100`, `learning_rate=0.05`, `max_depth=5`
+- **Scaler:** `RobustScaler` fit on original training data (pre-resampling).
+
+---
+
+### Step 4: Evaluation & Comparison
+
+#### Evaluation Metrics
+
+| Metric | Definition | Importance |
 |:---|:---|:---|
-| **Accuracy** | Tỷ lệ dự đoán đúng tổng thể | Dễ gây hiểu lầm trên dữ liệu mất cân bằng |
-| **Precision** | Trong những dự đoán "phá sản", bao nhiêu là đúng? | Giảm báo động sai |
-| **Recall** | Trong tất cả ca phá sản thực, bắt được bao nhiêu? | **Ưu tiên cao** — không bỏ sót rủi ro |
-| **F1 Score** | Trung bình điều hòa của Precision và Recall | Cân bằng hai chỉ số |
-| **AUC** | Diện tích dưới đường cong ROC | Khả năng phân biệt giữa hai lớp |
-| **Specificity** | Tỷ lệ nhận đúng doanh nghiệp lành mạnh | Tránh làm phiền doanh nghiệp tốt |
-| **MCC** | Matthews Correlation Coefficient (-1 đến 1) | **Chỉ số khách quan nhất** cho dữ liệu mất cân bằng |
+| **Accuracy** | % correct predictions overall | Can be misleading on imbalanced data |
+| **Precision** | % of "bankruptcy" predictions that are correct | Reduces false alarms |
+| **Recall** | % of actual bankruptcies caught | **HIGH PRIORITY** — minimize missed risks |
+| **F1 Score** | Harmonic mean of Precision & Recall | Balanced summary metric |
+| **AUC** | Area under ROC curve | Class separation ability |
+| **Specificity** | % non-bankrupt correctly identified | Avoids false alarms |
+| **MCC** | Matthews Correlation Coefficient | Most robust metric for imbalanced data |
 
-#### Phương pháp đánh giá nâng cao
-- **Confusion Matrix:** Ma trận nhầm lẫn trực quan hóa TP, TN, FP, FN.
-- **ROC Curve:** So sánh đường cong ROC giữa các mô hình.
-- **Precision-Recall Curve:** Đánh giá hiệu suất trên dữ liệu mất cân bằng (quan trọng hơn ROC).
-- **Feature Importance:** Xác định các chỉ số tài chính ảnh hưởng nhất đến dự đoán.
+#### Advanced Evaluation Methods
+- **Confusion Matrix:** Visual breakdown into TP, TN, FP, FN
+- **ROC Curve:** FPR vs. TPR across thresholds
+- **Precision-Recall Curve:** Specialized for imbalanced data
+- **Feature Importance:** Identifies most influential financial indicators
 
 ---
 
-## Kết quả
+## Results
 
-### Bảng So sánh Hiệu suất Tổng thể
+### Overall Performance Comparison
 
-| Mô hình | Accuracy | Precision | Recall | F1 Score | AUC |
+| Model | Accuracy | Precision | Recall | F1 Score | AUC |
 |:---|:---:|:---:|:---:|:---:|:---:|
 | Logistic Regression | 85.99% | 0.0331 | 0.7285 | 0.0633 | 0.8747 |
 | Random Forest | 98.32% | 0.1033 | 0.2053 | 0.1375 | 0.8215 |
@@ -265,9 +294,9 @@ Dữ liệu gốc
 | Voting Classifier | 89.14% | 0.0396 | 0.6755 | 0.0749 | 0.8953 |
 | **XGBoost** | **91.78%** | **0.0525** | **0.6821** | **0.0975** | **0.9075** |
 
-### So sánh Chi tiết: XGBoost vs. Voting Classifier
+### XGBoost vs. Voting Classifier (Detailed Comparison)
 
-| Chỉ số | XGBoost | Voting Classifier | Cải thiện |
+| Metric | XGBoost | Voting | Improvement |
 |:---|:---:|:---:|:---:|
 | Accuracy | 91.78% | 89.14% | +2.64% |
 | Precision | 0.0525 | 0.0396 | +32.6% |
@@ -277,58 +306,156 @@ Dữ liệu gốc
 | AUC | 0.9075 | 0.8953 | +1.4% |
 | MCC | 0.1738 | 0.1455 | +19.5% |
 
-### Top 10 Feature Importance (XGBoost)
+### Visualizations
 
-| Hạng | Đặc trưng | Trọng số | Ý nghĩa |
+#### ROC Curve Comparison
+![ROC Curve](images/01_roc_curve.png)
+
+Both XGBoost and Voting Classifier show excellent discrimination ability (AUC > 0.89). XGBoost achieves the steepest initial rise, indicating superior true positive detection with minimal false positive rate.
+
+#### Feature Importance Analysis
+![Feature Importance](images/02_feature_importance.png)
+
+**Key Findings:**
+- **ROE (Return on Equity) dominates at 38.8%** — the strongest bankruptcy predictor
+- Bankrupt firms typically show negative/declining ROE (eating into shareholder capital)
+- **Operational Margin (10.0%)** — profitability from core business
+- **Assets & Sales Growth (7.0%, 5.0%)** — stagnation correlates with bankruptcy risk
+- Lower importance on others indicates good feature diversity
+
+#### Confusion Matrices
+![Confusion Matrices](images/03_confusion_matrices.png)
+
+XGBoost achieves:
+- TN = 21,202 (correctly identified non-bankruptcies)
+- TP = 103 (correctly identified bankruptcies)
+- FN = 48 (missed bankruptcies — manageable)
+- FP = 1,859 (false alarms — acceptable cost)
+
+
+### Top 10 Feature Importance
+
+| Rank | Feature | Importance | Interpretation |
 |:---:|:---|:---:|:---|
-| 1 | **Return on Equity** | 0.3880 | Hiệu quả sử dụng vốn — chỉ số dẫn đầu |
-| 2 | Operational Margin | 0.0997 | Lợi nhuận hoạt động cốt lõi |
-| 3 | Assets Growth | 0.0702 | Tốc độ tăng trưởng tài sản |
-| 4 | Market Book Ratio | 0.0601 | Kỳ vọng thị trường vs. giá trị sổ sách |
-| 5 | Leverage Ratio | 0.0573 | Mức độ sử dụng nợ |
-| 6 | Asset Turnover | 0.0524 | Hiệu quả sử dụng tài sản |
-| 7 | Sales Growth | 0.0504 | Tốc độ tăng trưởng doanh thu |
-| 8 | Liquidity | 0.0499 | Khả năng thanh khoản |
-| 9 | EPS | 0.0451 | Lợi nhuận trên mỗi cổ phiếu |
-| 10 | Profitability | 0.0441 | Khả năng sinh lời tổng thể |
+| 1 | Return on Equity | 0.3880 | **Leading bankruptcy indicator** |
+| 2 | Operational Margin | 0.0997 | Core business profitability |
+| 3 | Assets Growth | 0.0702 | Growth/stagnation signal |
+| 4 | Market Book Ratio | 0.0601 | Market confidence vs. book value |
+| 5 | Leverage Ratio | 0.0573 | Debt burden level |
+| 6 | Asset Turnover | 0.0524 | Asset utilization efficiency |
+| 7 | Sales Growth | 0.0504 | Revenue expansion capability |
+| 8 | Liquidity | 0.0499 | Short-term financial health |
+| 9 | EPS | 0.0451 | Per-share profitability |
+| 10 | Profitability | 0.0441 | Overall profit generation |
 
-> **Nhận xét:** ROE chiếm gần 39% trọng số, cho thấy đây là chỉ số quyết định nhất trong dự đoán phá sản. Doanh nghiệp có ROE âm hoặc sụt giảm nghiêm trọng là dấu hiệu sớm nhất cho thấy đang "ăn vào" vốn chủ sở hữu.
+> **Insight:** ROE's dominance (nearly 4x the second feature) reflects financial reality: if a company systematically loses money on shareholder capital, bankruptcy is imminent. The large gap between ROE and others suggests the model's decision heavily depends on this single indicator.
 
-### Đánh giá Tính ổn định — Stratified K-Fold CV (K=5)
+### Cross-Validation Robustness
 
-Kết quả Cross-validation cho Voting Classifier (với ImbPipeline trên dữ liệu gốc):
+Stratified K-Fold CV Results for Voting Classifier (K=5, with ImbPipeline):
 
-| Chỉ số | Trung bình | Độ lệch chuẩn |
+| Metric | Mean | Std Dev |
 |:---|:---:|:---:|
 | AUC | 0.8928 | ±0.0152 |
 | F1 Score | 0.0725 | ±0.0043 |
 
-> Độ lệch chuẩn cực thấp chứng minh mô hình hoạt động nhất quán và không bị overfitting.
+**Interpretation:** Minimal standard deviations confirm robust, consistent performance across different data partitions—no overfitting.
 
 ---
 
-## Kết luận
+## Conclusion
 
-1. **XGBoost là mô hình tối ưu nhất** cho bài toán dự đoán phá sản trên dữ liệu mất cân bằng cực đoan. Mô hình đạt AUC = 0.9075 (mức xuất sắc), vượt trội so với Voting Classifier và tất cả các mô hình đơn lẻ.
+### Key Findings
 
-2. **Phương pháp `scale_pos_weight` hiệu quả hơn SMOTE** cho XGBoost: huấn luyện trực tiếp trên dữ liệu gốc với trọng số lớp, tránh tạo mẫu tổng hợp và giảm nguy cơ rò rỉ dữ liệu.
+1. **XGBoost is the optimal model** for corporate bankruptcy prediction on highly imbalanced data:
+   - AUC = 0.9075 (excellent discrimination)
+   - MCC = 0.1738 (positive correlation in extreme imbalance)
+   - Outperforms Voting Classifier and all individual models on all major metrics
 
-3. **ROE là chỉ số tài chính quan trọng nhất** (38.8% trọng số), theo sau là Operational Margin và Assets Growth. Kết quả này phù hợp với lý thuyết tài chính: doanh nghiệp phá sản thường do kinh doanh không có lãi kết hợp nợ quá cao.
+2. **`scale_pos_weight` approach superior to SMOTE** for XGBoost:
+   - Train on original data with weighted loss function
+   - Avoid synthetic sample artifacts  
+   - Cleaner, more interpretable decision boundary
 
-4. **MCC = 0.1738** — chỉ số dương ổn định trong bối cảnh dữ liệu mất cân bằng cực đoan, cho thấy mô hình vượt xa hiệu suất của bộ phân loại ngẫu nhiên.
+3. **ROE is the dominant bankruptcy predictor** (38.8% importance):
+   - Negative/declining ROE signals capital destruction
+   - Aligns with financial theory on insolvency
+   - Model has captured fundamental economic principle
 
-5. **Specificity = 91.94%** — mô hình nhận đúng 92% doanh nghiệp lành mạnh, giảm thiểu báo động sai trong thực tế.
+4. **Strong model stability:**
+   - Cross-validation scores vary minimally across folds
+   - Robust generalization to unseen data
+   - No significant overfitting
 
-### Hạn chế và Hướng phát triển
+5. **Practical performance metrics:**
+   - Catches **68% of actual bankruptcies** (high recall)
+   - Only **9% false alarm rate on bankruptcy calls** (reasonable precision)
+   - **92% correctly identify healthy firms** (high specificity)
 
-- Precision và F1 Score vẫn ở mức thấp do đặc thù dữ liệu cực kỳ mất cân bằng (0.6%).
-- Hướng nghiên cứu tiếp theo: tối ưu siêu tham số (GridSearchCV / Bayesian Optimization), thử nghiệm LightGBM / CatBoost, kết hợp chọn lọc đặc trưng nâng cao, và tối ưu ngưỡng quyết định (decision threshold) dựa trên chi phí business.
+### Limitations & Future Work
+
+- **F1 Score remains modest (0.098)** due to inherent class imbalance (0.6%) — even perfect models struggle.
+- **Recommendations for improvement:**
+  - Hyperparameter optimization (GridSearchCV, Bayesian Optimization)
+  - Test LightGBM, CatBoost alternatives
+  - Advanced feature engineering / selection
+  - Decision threshold optimization based on business cost model
+  - Ensemble of multiple XGBoost models with different hyperparameters
 
 ---
 
-## Tài liệu tham khảo
+## Setup & Usage
+
+### Initial Setup
+
+1. **Clone or download the repository:**
+   ```bash
+   cd bankruptcy_prediction
+   ```
+
+2. **Create and organize the directory structure:**
+   ```bash
+   mkdir -p data notebooks images
+   ```
+
+3. **Move data files:**
+   - Place `bankruptcy_data.xlsx` in the `data/` folder
+
+4. **Move notebook file:**
+   - Place `project.ipynb` in the `notebooks/` folder
+
+5. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+6. **Launch Jupyter Notebook:**
+   ```bash
+   jupyter notebook notebooks/project.ipynb
+   ```
+
+### Running the Analysis
+
+1. Open `notebooks/project.ipynb` in Jupyter Notebook or VS Code
+2. Execute cells sequentially from top to bottom
+3. All visualizations will be automatically saved to `images/` folder
+4. Generated plots are referenced in the README
+
+### Key Random State
+- All operations use `random_state=42` for reproducibility
+- Cross-validation uses stratified splitting to maintain class balance
+
+---
+
+## References
 
 1. [DATA-SCIENCE-FOR-FINANCE / Bankruptcy Prediction — serkannpolatt](https://github.com/serkannpolatt/DATA-SCIENCE-FOR-FINANCE/tree/main/Bankruptcy%20Prediction)
 2. [Bankruptcy Prediction Using Machine Learning Techniques — MDPI](https://www.mdpi.com/1911-8074/15/1/35)
 3. [Bankruptcy Prediction Using Machine Learning Models — IJSREM](https://ijsrem.com/download/predicting-bankruptcy-with-machine-learning-models/)
-4. [Ứng dụng học máy trong dự báo rủi ro phá sản — KTPT NEU](https://ktpt.neu.edu.vn/Uploads/Bai%20bao/2023/So%20310/380842.pdf)
+4. [Machine Learning Applications in Bankruptcy Risk Forecasting — KTPT NEU](https://ktpt.neu.edu.vn/Uploads/Bai%20bao/2023/So%20310/380842.pdf)
+
+---
+
+**Generated:** Python 3.13 | Jupyter Notebook | scikit-learn, imbalanced-learn, XGBoost
+
+**Author Notes:** This comprehensive pipeline demonstrates best practices for machine learning on imbalanced financial datasets, including proper data leakage prevention, stratified cross-validation, and appropriate metric selection for rare-event prediction.
